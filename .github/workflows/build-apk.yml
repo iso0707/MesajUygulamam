@@ -11,38 +11,43 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: GitHub deposunu indir
+      - name: Repository
         uses: actions/checkout@v4
 
-      - name: Python kur
+      - name: Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Sistem paketlerini kur
-        run: |
-          sudo apt update
-          sudo apt install -y \
-            git \
-            zip \
-            unzip \
-            openjdk-17-jdk \
-            autoconf \
-            automake \
-            libtool \
-            pkg-config \
-            zlib1g-dev \
-            libncurses5-dev \
-            libncursesw5-dev \
-            cmake \
-            libffi-dev
+      - name: Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
 
-      - name: Buildozer kur
+      - name: Android SDK lisanslarını kabul et
+        run: |
+          yes | sdkmanager --licenses || true
+
+      - name: Android Build Tools 35 kur
+        run: |
+          yes | sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Sistem paketleri
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            git zip unzip autoconf automake libtool \
+            pkg-config zlib1g-dev libncurses5-dev \
+            libncursesw5-dev cmake libffi-dev
+
+      - name: Buildozer
         run: |
           python -m pip install --upgrade pip
-          pip install buildozer cython==0.29.36
+          pip install buildozer
+          pip install "cython==0.29.36"
 
-      - name: APK ayar dosyası oluştur
+      - name: buildozer.spec oluştur
         run: |
           cat > buildozer.spec <<'EOF'
           [app]
@@ -64,6 +69,9 @@ jobs:
 
           android.permissions = INTERNET
 
+          android.api = 35
+          android.minapi = 23
+
           [buildozer]
 
           log_level = 2
@@ -74,7 +82,7 @@ jobs:
         run: |
           buildozer android debug
 
-      - name: APK'yı yükle
+      - name: APK'yı kaydet
         uses: actions/upload-artifact@v4
         with:
           name: Mesaj-Uygulamam-APK
